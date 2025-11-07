@@ -3,27 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --accent: 217 91% 60%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84.2% 60.2%;
+  --background: 220 13% 8%;
+  --foreground: 210 20% 98%;
+  --muted: 217 19% 12%;
+  --muted-foreground: 215 14% 65%;
+  --popover: 222 14% 10%;
+  --popover-foreground: 210 20% 98%;
+  --card: 220 13% 10%;
+  --card-foreground: 210 20% 98%;
+  --border: 217 19% 18%;
+  --input: 217 19% 15%;
+  --primary: 195 91% 45%;
+  --primary-foreground: 210 20% 98%;
+  --secondary: 217 19% 15%;
+  --secondary-foreground: 210 20% 98%;
+  --accent: 195 85% 52%;
+  --accent-foreground: 220 13% 8%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --ring: 215 20.2% 65.1%;
+  --ring: 195 91% 45%;
   --radius: 0.5rem;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 .dark {
@@ -32,6 +32,6 @@
 
 body {
   font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: hsl(210 40% 96%);
-  color: hsl(222.2 47.4% 11.2%);
+  background-color: hsl(220 13% 8%);
+  color: hsl(210 20% 98%);
 }
