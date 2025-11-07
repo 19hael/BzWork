@@ -3,27 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --accent: 217 91% 60%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 100%;
-  --ring: 215 20.2% 65.1%;
-  --radius: 0.5rem;
-  color-scheme: light;
+  --background: 232 36% 6%;
+  --foreground: 214 21% 94%;
+  --muted: 229 18% 18%;
+  --muted-foreground: 220 13% 71%;
+  --popover: 235 28% 10%;
+  --popover-foreground: 214 21% 94%;
+  --card: 235 24% 12%;
+  --card-foreground: 214 21% 94%;
+  --border: 228 21% 24%;
+  --input: 228 21% 24%;
+  --primary: 264 61% 72%;
+  --primary-foreground: 233 47% 10%;
+  --secondary: 210 18% 24%;
+  --secondary-foreground: 214 21% 94%;
+  --accent: 188 47% 62%;
+  --accent-foreground: 233 47% 10%;
+  --destructive: 1 71% 63%;
+  --destructive-foreground: 214 21% 94%;
+  --ring: 256 72% 74%;
+  --radius: 0.8rem;
+  color-scheme: dark;
 }
 
 .dark {
@@ -32,6 +32,16 @@
 
 body {
   font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: hsl(210 40% 96%);
-  color: hsl(222.2 47.4% 11.2%);
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(236, 72, 153, 0.14), transparent 46%),
+    radial-gradient(circle at 85% 0%, rgba(125, 211, 252, 0.1), transparent 42%),
+    linear-gradient(145deg, #03060f, #0a1223 45%, #11152a 100%);
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(198, 171, 255, 0.4);
+  color: #03060f;
 }

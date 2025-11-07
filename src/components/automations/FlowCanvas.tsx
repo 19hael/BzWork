@@ -15,7 +15,7 @@ type FlowCanvasProps = {
 
 export function FlowCanvas({ trigger, actions }: FlowCanvasProps) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-[#070b17]/80 p-5 text-white shadow-lg shadow-slate-900/40">
+    <div className="rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.05),rgba(3,7,18,0.88))] p-5 text-white shadow-lg shadow-slate-900/40">
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,_1fr)]">
         <div className="space-y-4">
           <TriggerSelector trigger={trigger} />

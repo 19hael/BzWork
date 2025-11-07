@@ -62,7 +62,7 @@ export function AutomationBuilder() {
   };
 
   return (
-    <div className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-5 text-white">
+    <div className="space-y-4 rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.05),rgba(4,6,16,0.85))] p-5 text-white">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.4em] text-white/40">
