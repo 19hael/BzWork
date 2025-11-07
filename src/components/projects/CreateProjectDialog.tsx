@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useProjects } from "@/lib/hooks/useProjects";
-import { Project } from "@/types";
 
 export function CreateProjectDialog() {
-  const { createProject } = useProjects();
+  const { createProject, workspaceId } = useProjects();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -27,33 +26,32 @@ export function CreateProjectDialog() {
     setForm((state) => ({ ...state, [field]: event.target.value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name) {
       toast.error("Project needs a name");
       return;
     }
+    if (!workspaceId) {
+      toast.error("Workspace not ready. Intenta de nuevo.");
+      return;
+    }
     setSubmitting(true);
-    const project: Project = {
-      id: `proj-${crypto.randomUUID()}`,
-      workspace_id: "ws-demo-01",
-      name: form.name,
-      description: form.description,
-      status: "active",
-      color: "#2563eb",
-      start_date: new Date().toISOString(),
-      end_date: form.end_date || null,
-      budget: null,
-      created_by: "user-demo-01",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      progress: 0,
-      budget_used: 0,
-    };
-    createProject(project);
-    setSubmitting(false);
-    setOpen(false);
-    setForm({ name: "", description: "", end_date: "" });
-    toast.success("Project added to workspace");
+    try {
+      await createProject({
+        name: form.name,
+        description: form.description,
+        end_date: form.end_date || null,
+      });
+      setOpen(false);
+      setForm({ name: "", description: "", end_date: "" });
+      toast.success("Project added to workspace");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to create project";
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -98,7 +96,7 @@ export function CreateProjectDialog() {
           <Button
             className="w-full rounded-2xl py-5 text-base font-semibold"
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !workspaceId}
           >
             {submitting ? "Creating..." : "Create project"}
           </Button>

@@ -14,51 +14,51 @@ export function Header({ title, subtitle }: HeaderProps) {
   const { summary } = useProjects();
 
   return (
-    <header className="flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm backdrop-blur">
+    <header className="flex flex-col gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 text-white backdrop-blur">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+          <p className="text-xs uppercase tracking-[0.4em] text-white/40">
             BzWork Command Hub
           </p>
-          <h1 className="text-3xl font-semibold text-slate-900">{title}</h1>
+          <h1 className="text-3xl font-semibold text-white">{title}</h1>
           {subtitle ? (
-            <p className="text-sm text-slate-500">{subtitle}</p>
+            <p className="text-sm text-white/70">{subtitle}</p>
           ) : null}
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" className="relative">
+          <Button variant="ghost" className="relative text-white hover:bg-white/10">
             <Bell className="h-5 w-5" />
             <span className="absolute right-1 top-1 inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-rose-500" />
           </Button>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-white text-sm font-semibold">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
             AV
           </div>
         </div>
       </div>
       <CommandPalette />
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl bg-slate-900 px-4 py-3 text-white">
-          <p className="text-sm text-slate-300">Workspace completion</p>
+        <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-900 px-4 py-3 text-white">
+          <p className="text-sm text-white/60">Workspace completion</p>
           <p className="text-3xl font-semibold">{summary.completion}%</p>
         </div>
-        <div className="rounded-2xl bg-slate-100 px-4 py-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">
+        <div className="rounded-2xl bg-white/10 px-4 py-3">
+          <p className="text-xs font-semibold uppercase text-white/60">
             Overdue
           </p>
-          <p className="text-2xl font-semibold text-slate-900">
+          <p className="text-2xl font-semibold text-white">
             {summary.overdue}
           </p>
-          <p className="text-sm text-slate-500">Items need attention</p>
+          <p className="text-sm text-white/70">Items need attention</p>
         </div>
-        <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">
+        <div className="rounded-2xl border border-dashed border-white/20 px-4 py-3">
+          <p className="text-xs font-semibold uppercase text-white/60">
             Automations
           </p>
-          <p className="flex items-center gap-2 text-2xl font-semibold text-slate-900">
-            <Sparkles className="h-5 w-5 text-amber-500" />
+          <p className="flex items-center gap-2 text-2xl font-semibold text-white">
+            <Sparkles className="h-5 w-5 text-amber-400" />
             {summary.highPriority}
           </p>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-white/70">
             Urgent workflows ready to trigger
           </p>
         </div>

@@ -36,6 +36,9 @@ export function AIChatPanel() {
         body: JSON.stringify({ message: userMessage.content }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error ?? "No recibimos respuesta del copiloto");
+      }
       const aiMessage: Message = {
         role: "assistant",
         content: data?.message ?? "No response",
@@ -45,7 +48,13 @@ export function AIChatPanel() {
     } catch {
       setMessages((state) => [
         ...state,
-        { role: "assistant", content: "I could not reach the AI endpoint." },
+        {
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? error.message
+              : "I could not reach the AI endpoint.",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -53,17 +62,17 @@ export function AIChatPanel() {
   };
 
   return (
-    <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white/90">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+    <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-white/5 text-white">
+      <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+          <p className="text-xs uppercase tracking-[0.4em] text-white/40">
             AI Copilot
           </p>
-          <p className="text-sm font-semibold text-slate-900">
+          <p className="text-sm font-semibold text-white">
             Natural language assistant
           </p>
         </div>
-        <Sparkles className="h-5 w-5 text-amber-500" />
+        <Sparkles className="h-5 w-5 text-amber-400" />
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         {messages.map((message, index) => (
@@ -71,8 +80,8 @@ export function AIChatPanel() {
             key={index}
             className={`max-w-lg rounded-2xl px-4 py-3 text-sm ${
               message.role === "assistant"
-                ? "bg-slate-100 text-slate-900"
-                : "ml-auto bg-slate-900 text-white"
+                ? "bg-white/10 text-white"
+                : "ml-auto bg-cyan-500/20 text-white"
             }`}
           >
             {message.role === "assistant" ? (
@@ -85,7 +94,7 @@ export function AIChatPanel() {
                 {message.actions.map((action) => (
                   <span
                     key={action.action}
-                    className="rounded-xl border border-dashed border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600"
+                    className="rounded-xl border border-dashed border-white/20 px-3 py-1 text-xs font-semibold text-white/70"
                   >
                     {action.label}
                   </span>
@@ -95,7 +104,7 @@ export function AIChatPanel() {
           </div>
         ))}
       </div>
-      <div className="border-t border-slate-100 px-5 py-4">
+      <div className="border-t border-white/5 px-5 py-4">
         <Textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}

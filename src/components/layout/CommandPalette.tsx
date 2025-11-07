@@ -35,14 +35,14 @@ export function CommandPalette() {
     <>
       <Button
         variant="outline"
-        className="w-full justify-between gap-4 text-left text-sm text-slate-500"
+        className="w-full justify-between gap-4 text-left text-sm text-white/70"
         onClick={() => setOpen(true)}
       >
         <span className="flex items-center gap-2">
-          <Search className="h-4 w-4 text-slate-400" />
+          <Search className="h-4 w-4 text-white/40" />
           Search projects, automations, tasks
         </span>
-        <kbd className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500">
+        <kbd className="rounded-md bg-white/10 px-2 py-1 text-xs text-white/60">
           ⌘K
         </kbd>
       </Button>
@@ -51,45 +51,45 @@ export function CommandPalette() {
         onOpenChange={setOpen}
         label="Global command menu"
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          "fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-[#050812] text-white shadow-2xl"
         )}
       >
-        <div className="flex items-center border-b border-slate-100 px-4">
-          <Search className="h-4 w-4 text-slate-400" />
+        <div className="flex items-center border-b border-white/10 px-4">
+          <Search className="h-4 w-4 text-white/40" />
           <Command.Input
             autoFocus
-            className="h-12 w-full border-0 bg-transparent px-3 text-sm outline-none placeholder:text-slate-400"
+            className="h-12 w-full border-0 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/40"
             placeholder="Jump to anything..."
           />
         </div>
         <Command.List className="max-h-80 overflow-y-auto px-2 py-4 text-sm">
-          <Command.Empty className="px-4 py-2 text-slate-500">
+          <Command.Empty className="px-4 py-2 text-white/60">
             Nothing found. Try another search.
           </Command.Empty>
           <Command.Group
             heading="Navigation"
-            className="space-y-1 px-2 text-xs font-semibold uppercase tracking-widest text-slate-400"
+            className="space-y-1 px-2 text-xs font-semibold uppercase tracking-widest text-white/40"
           >
             <Command.Item
-              className="group rounded-xl px-3 py-2 text-sm font-medium text-slate-700 data-[selected=true]:bg-slate-900 data-[selected=true]:text-white"
+              className="group rounded-xl px-3 py-2 text-sm font-medium text-white/70 data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
               onSelect={() => handleSelect("/dashboard")}
             >
               Overview
             </Command.Item>
             <Command.Item
-              className="group rounded-xl px-3 py-2 text-sm font-medium text-slate-700 data-[selected=true]:bg-slate-900 data-[selected=true]:text-white"
+              className="group rounded-xl px-3 py-2 text-sm font-medium text-white/70 data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
               onSelect={() => handleSelect("/dashboard/projects")}
             >
               Projects
             </Command.Item>
             <Command.Item
-              className="group rounded-xl px-3 py-2 text-sm font-medium text-slate-700 data-[selected=true]:bg-slate-900 data-[selected=true]:text-white"
+              className="group rounded-xl px-3 py-2 text-sm font-medium text-white/70 data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
               onSelect={() => handleSelect("/dashboard/spreadsheets")}
             >
               Spreadsheets
             </Command.Item>
             <Command.Item
-              className="group rounded-xl px-3 py-2 text-sm font-medium text-slate-700 data-[selected=true]:bg-slate-900 data-[selected=true]:text-white"
+              className="group rounded-xl px-3 py-2 text-sm font-medium text-white/70 data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
               onSelect={() => handleSelect("/dashboard/automations")}
             >
               Automations
@@ -97,12 +97,12 @@ export function CommandPalette() {
           </Command.Group>
           <Command.Group
             heading="Projects"
-            className="mt-4 space-y-1 px-2 text-xs font-semibold uppercase tracking-widest text-slate-400"
+            className="mt-4 space-y-1 px-2 text-xs font-semibold uppercase tracking-widest text-white/40"
           >
             {projects.map((project) => (
               <Command.Item
                 key={project.id}
-                className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 data-[selected=true]:bg-brand-600 data-[selected=true]:text-white"
+                className="rounded-xl px-3 py-2 text-sm font-medium text-white/70 data-[selected=true]:bg-cyan-500/30 data-[selected=true]:text-white"
                 onSelect={() => handleSelect(`/dashboard/projects/${project.id}`)}
               >
                 {project.name}
@@ -111,12 +111,12 @@ export function CommandPalette() {
           </Command.Group>
           <Command.Group
             heading="Tasks"
-            className="mt-4 space-y-1 px-2 text-xs font-semibold uppercase tracking-widest text-slate-400"
+            className="mt-4 space-y-1 px-2 text-xs font-semibold uppercase tracking-widest text-white/40"
           >
             {tasks.slice(0, 8).map((task) => (
               <Command.Item
                 key={task.id}
-                className="rounded-xl px-3 py-2 text-sm text-slate-700 data-[selected=true]:bg-slate-900 data-[selected=true]:text-white"
+                className="rounded-xl px-3 py-2 text-sm text-white/70 data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
                 onSelect={() =>
                   handleSelect(
                     `/dashboard/projects/${task.project_id}/tasks/${task.id}`

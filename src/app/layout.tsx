@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | BzWork",
   },
   description:
-    "BzWork Demo: unified project management, spreadsheets, and automation with simulated AI copilots.",
+    "BzWork Demo: unified project management, spreadsheets, and automation with Gemini copilots.",
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${jetBrains.variable} bg-slate-50 text-slate-900 antialiased`}
+        className={`${inter.variable} ${jetBrains.variable} text-slate-100 antialiased`}
       >
         <AppProviders>{children}</AppProviders>
       </body>

@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { toast } from "react-hot-toast";
+import { createClient } from "@/lib/supabase/client";
 import { Task } from "@/types";
 import { useWorkspaceStore } from "@/lib/stores/workspace-store";
 
@@ -35,9 +37,26 @@ export function useTasks(projectId?: string) {
     }));
   }, [filtered]);
 
-  const moveTask = (taskId: string, status: Task["status"], position: number) => {
+  const moveTask = async (
+    taskId: string,
+    status: Task["status"],
+    position: number
+  ) => {
+    const supabase = createClient();
+    const currentTask = tasks.find((task) => task.id === taskId);
     updateTaskStatus(taskId, status);
     updateTaskPosition(taskId, position);
+    const { error } = await supabase
+      .from("tasks")
+      .update({ status, position })
+      .eq("id", taskId);
+    if (error) {
+      toast.error("No pudimos mover la tarea, intenta otra vez");
+      if (currentTask) {
+        updateTaskStatus(taskId, currentTask.status);
+        updateTaskPosition(taskId, currentTask.position ?? 0);
+      }
+    }
   };
 
   return {

@@ -19,18 +19,16 @@ export default function SpreadsheetDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+    <div className="space-y-6 text-white">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <p className="text-xs uppercase tracking-[0.4em] text-white/40">
           Spreadsheet
         </p>
-        <h1 className="text-2xl font-semibold text-slate-900">{sheet.name}</h1>
-        <p className="text-sm text-slate-500">{sheet.description}</p>
+        <h1 className="text-3xl font-semibold text-white">{sheet.name}</h1>
+        <p className="text-sm text-white/70">{sheet.description}</p>
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <SpreadsheetGrid sheetId={sheet.id} />
-        </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,_3fr)_minmax(320px,_1fr)]">
+        <SpreadsheetGrid sheetId={sheet.id} />
         <AIFormulaAssist />
       </div>
     </div>

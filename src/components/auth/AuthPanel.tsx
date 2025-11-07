@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function AuthPanel() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     email: "",
@@ -33,7 +35,9 @@ export function AuthPanel() {
           password: form.password,
         });
         if (error) throw error;
-        toast.success("Signed in");
+        toast.success("Sesión iniciada");
+        router.push("/dashboard");
+        router.refresh();
       } else {
         const { error } = await supabase.auth.signUp({
           email: form.email,
@@ -44,7 +48,7 @@ export function AuthPanel() {
           },
         });
         if (error) throw error;
-        toast.success("Check your email to confirm the account");
+        toast.success("Revisa tu email para confirmar la cuenta");
       }
     } catch (error: unknown) {
       const message =
@@ -56,11 +60,11 @@ export function AuthPanel() {
   };
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl">
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white shadow-xl shadow-cyan-500/10 backdrop-blur">
       <Tabs defaultValue="signin" className="w-full">
         <TabsList className="mb-6 grid w-full grid-cols-2">
-          <TabsTrigger value="signin">Sign in</TabsTrigger>
-          <TabsTrigger value="signup">Create account</TabsTrigger>
+          <TabsTrigger value="signin">Inicia sesión</TabsTrigger>
+          <TabsTrigger value="signup">Crear cuenta</TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
           <div className="space-y-4">
@@ -89,14 +93,14 @@ export function AuthPanel() {
               disabled={loading}
               className="w-full"
             >
-              {loading ? "Checking..." : "Enter workspace"}
+              {loading ? "Verificando..." : "Entrar al workspace"}
             </Button>
           </div>
         </TabsContent>
         <TabsContent value="signup">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full name</Label>
+              <Label htmlFor="fullName">Nombre completo</Label>
               <Input
                 id="fullName"
                 placeholder="Alex Vega"
@@ -105,7 +109,7 @@ export function AuthPanel() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email-signup">Work email</Label>
+              <Label htmlFor="email-signup">Email de trabajo</Label>
               <Input
                 id="email-signup"
                 type="email"
@@ -129,13 +133,13 @@ export function AuthPanel() {
               disabled={loading}
               className="w-full"
             >
-              {loading ? "Creating account..." : "Request access"}
+              {loading ? "Creando..." : "Solicitar acceso"}
             </Button>
           </div>
         </TabsContent>
       </Tabs>
-      <p className="mt-6 text-center text-xs text-slate-400">
-        By continuing you agree to the BzWork data policy.
+      <p className="mt-6 text-center text-xs text-white/60">
+        Al continuar aceptas la política de datos de BzWork.
       </p>
     </div>
   );

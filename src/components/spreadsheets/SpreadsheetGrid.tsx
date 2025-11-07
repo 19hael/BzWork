@@ -47,7 +47,7 @@ export function SpreadsheetGrid({ sheetId }: SpreadsheetGridProps) {
       clone[selected.row] = [];
     }
     clone[selected.row][selected.column] = draft;
-    updateSpreadsheet({
+    void updateSpreadsheet({
       ...sheet,
       data: clone,
       updated_at: new Date().toISOString(),
@@ -57,60 +57,68 @@ export function SpreadsheetGrid({ sheetId }: SpreadsheetGridProps) {
   const cellLabel = `${columnLabel(selected.column)}${selected.row + 1}`;
 
   return (
-    <div className="space-y-4">
-      <FormulaBar cellLabel={cellLabel} value={draft} />
-      <div className="overflow-auto rounded-3xl border border-slate-200 bg-white">
-        <table className="min-w-full border-separate border-spacing-0 text-sm">
-          <thead>
-            <tr>
-              <th className="sticky left-0 top-0 bg-slate-100 px-3 py-2 text-left text-xs font-semibold text-slate-500">
-                #
-              </th>
-              {matrix[0]?.map((_, columnIndex) => (
-                <th
-                  key={columnIndex}
-                  className="border-b border-slate-100 px-4 py-2 text-left text-xs font-semibold uppercase tracking-widest text-slate-400"
-                >
-                  {columnLabel(columnIndex)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {matrix.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                <td className="sticky left-0 bg-white px-3 py-2 text-xs font-semibold text-slate-400">
-                  {rowIndex + 1}
-                </td>
-                {row.map((cell, columnIndex) => {
-                  const isSelected =
-                    selected.row === rowIndex && selected.column === columnIndex;
-                  return (
-                    <td
-                      key={`${rowIndex}-${columnIndex}`}
-                      onClick={() =>
-                        setSelected({ row: rowIndex, column: columnIndex })
-                      }
-                      className={`cursor-pointer border border-slate-100 px-4 py-2 text-slate-700 ${
-                        isSelected
-                          ? "bg-amber-50 ring-2 ring-amber-400"
-                          : "bg-white hover:bg-slate-50"
-                      }`}
-                    >
-                      {cell}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="space-y-4 rounded-3xl border border-white/10 bg-[#090f1d]/80 p-5 shadow-lg shadow-cyan-500/5">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-white/70">
+        <div>
+          <p className="text-xs uppercase tracking-[0.4em] text-white/40">
+            Excel integrado
+          </p>
+          <p className="text-base font-semibold text-white">
+            Celda activa: {cellLabel}
+          </p>
+        </div>
+        <FormulaBar cellLabel={cellLabel} value={draft} />
       </div>
-      <CellEditor
-        value={draft}
-        onChange={setDraft}
-        onCommit={handleCommit}
-      />
+      <div className="overflow-hidden rounded-2xl border border-white/5">
+        <div className="max-h-[620px] overflow-auto bg-black/20">
+          <table className="min-w-full border-separate border-spacing-0 text-sm text-white/80">
+            <thead>
+              <tr>
+                <th className="sticky left-0 top-0 bg-white/5 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
+                  #
+                </th>
+                {matrix[0]?.map((_, columnIndex) => (
+                  <th
+                    key={columnIndex}
+                    className="border-b border-white/10 bg-[#0e172d] px-4 py-2 text-left text-xs font-semibold uppercase tracking-[0.3em] text-white/40"
+                  >
+                    {columnLabel(columnIndex)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matrix.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  <td className="sticky left-0 bg-[#0b1326] px-3 py-2 text-xs font-semibold text-white/50">
+                    {rowIndex + 1}
+                  </td>
+                  {row.map((cell, columnIndex) => {
+                    const isSelected =
+                      selected.row === rowIndex && selected.column === columnIndex;
+                    return (
+                      <td
+                        key={`${rowIndex}-${columnIndex}`}
+                        onClick={() =>
+                          setSelected({ row: rowIndex, column: columnIndex })
+                        }
+                        className={`cursor-pointer border border-white/5 px-4 py-2 ${
+                          isSelected
+                            ? "bg-cyan-500/20 text-white ring-2 ring-cyan-400/70"
+                            : "bg-transparent text-white/80 hover:bg-white/5"
+                        }`}
+                      >
+                        {cell}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <CellEditor value={draft} onChange={setDraft} onCommit={handleCommit} />
     </div>
   );
 }

@@ -15,14 +15,14 @@ export default function DashboardPage() {
   const { tasks } = useTasks(activeProject?.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white">
       <Header
         title="Executive overview"
         subtitle="Monitor projects, spreadsheets, automations, and AI copilots in one control center."
       />
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold">
             Active programs
           </h2>
           <CreateProjectDialog />
@@ -35,7 +35,7 @@ export default function DashboardPage() {
       </section>
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold">
             Kanban board - {activeProject?.name}
           </h2>
         </div>

@@ -19,13 +19,13 @@ export default function ProjectsPage() {
       : projects.filter((project) => project.status === filter);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+          <p className="text-xs uppercase tracking-[0.4em] text-white/40">
             Projects
           </p>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <h1 className="text-2xl font-semibold">
             Strategy board
           </h1>
         </div>
@@ -58,10 +58,10 @@ export default function ProjectsPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+            <p className="text-xs uppercase tracking-[0.4em] text-white/40">
               Active board
             </p>
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold">
               {activeProject?.name}
             </h2>
           </div>

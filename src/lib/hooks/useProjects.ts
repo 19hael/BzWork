@@ -1,9 +1,17 @@
 import { useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Project } from "@/types";
 import { useWorkspaceStore } from "@/lib/stores/workspace-store";
 
 export function useProjects() {
-  const { projects, tasks, activeProjectId, setActiveProject, addProject } =
+  const {
+    workspaceId,
+    projects,
+    tasks,
+    activeProjectId,
+    setActiveProject,
+    upsertProject,
+  } =
     useWorkspaceStore();
 
   const hydrated = useMemo(() => {
@@ -57,7 +65,41 @@ export function useProjects() {
 
   const selectProject = (id: string) => setActiveProject(id);
 
-  const createProject = (project: Project) => addProject(project);
+  const createProject = async (
+    input: Pick<Project, "name" | "description" | "end_date">
+  ) => {
+    if (!workspaceId) {
+      throw new Error("Workspace not ready yet");
+    }
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const payload: Project = {
+      id: crypto.randomUUID(),
+      workspace_id: workspaceId,
+      name: input.name,
+      description: input.description,
+      status: "active",
+      color: "#06b6d4",
+      start_date: new Date().toISOString(),
+      end_date: input.end_date,
+      budget: null,
+      created_by: user?.id ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase
+      .from("projects")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) {
+      throw error;
+    }
+    upsertProject(data);
+    return data;
+  };
 
   return {
     projects: hydrated,
@@ -65,5 +107,6 @@ export function useProjects() {
     summary,
     selectProject,
     createProject,
+    workspaceId,
   };
 }

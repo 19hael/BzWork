@@ -28,13 +28,13 @@ export function ProjectBoard({ projectId }: BoardProps) {
           key={column.id}
           onDragOver={(event) => event.preventDefault()}
           onDrop={() => handleDrop(column.id)}
-          className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
+          className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white"
         >
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-semibold text-white">
               {column.title}
             </p>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-white/60">
               {column.tasks.length}
             </span>
           </div>

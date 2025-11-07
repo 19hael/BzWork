@@ -11,7 +11,7 @@ export default function AutomationDetailPage() {
 
   if (!automation) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
         Automation not found.
       </div>
     );
@@ -22,15 +22,15 @@ export default function AutomationDetailPage() {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white">
       <div>
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+        <p className="text-xs uppercase tracking-[0.4em] text-white/40">
           Automation
         </p>
-        <h1 className="text-2xl font-semibold text-slate-900">
+        <h1 className="text-2xl font-semibold">
           {automation.name}
         </h1>
-        <p className="text-sm text-slate-500">{automation.description}</p>
+        <p className="text-sm text-white/70">{automation.description}</p>
       </div>
       <FlowCanvas
         trigger={{
