@@ -1,0 +1,1337 @@
+Vas a construir BzWork Demo MVP - una plataforma de productividad empresarial todo-en-uno que integra:
+
+Gestión de Proyectos (estilo ClickUp)
+
+Motor de Análisis de Datos (hojas de cálculo con IA)
+
+Centro de Automatización (estilo n8n)
+
+Objetivo: Demo funcional deployable en Netlify, con código en GitHub, conexión real a Supabase para persistencia de datos, y funcionalidades de IA simuladas de manera realista.
+
+🎯 REQUERIMIENTOS TÉCNICOS
+Stack Tecnológico
+Frontend Framework:
+
+Next.js 14 (App Router con TypeScript)
+
+React 18+ con TypeScript strict mode
+
+Tailwind CSS para estilos
+
+shadcn/ui para componentes UI base
+
+Base de Datos:
+
+Supabase (PostgreSQL + Real-time + Auth)
+
+TypeScript types auto-generados desde schema
+
+Row Level Security (RLS) habilitado
+
+Deployment:
+
+Netlify (continuous deployment desde GitHub)
+
+Variables de entorno configuradas en Netlify
+
+netlify.toml configurado correctamente
+
+Repositorio:
+
+GitHub con estructura modular clara
+
+.env.example para variables de entorno
+
+README.md con setup instructions completo
+
+📊 SCHEMA DE BASE DE DATOS SUPABASE
+Crea las siguientes tablas en Supabase con este SQL:
+
+sql
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Users table (extends Supabase auth.users)
+CREATE TABLE public.profiles (
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  full_name TEXT,
+  avatar_url TEXT,
+  company_name TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Workspaces table
+CREATE TABLE public.workspaces (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  description TEXT,
+  owner_id UUID REFERENCES public.profiles(id) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Projects table
+CREATE TABLE public.projects (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'completed')),
+  color TEXT DEFAULT '#3b82f6',
+  start_date DATE,
+  end_date DATE,
+  budget NUMERIC(12, 2),
+  created_by UUID REFERENCES public.profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tasks table
+CREATE TABLE public.tasks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  status TEXT DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'review', 'done')),
+  priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+  assigned_to UUID REFERENCES public.profiles(id),
+  due_date TIMESTAMP WITH TIME ZONE,
+  estimated_hours NUMERIC(6, 2),
+  actual_hours NUMERIC(6, 2),
+  tags TEXT[],
+  position INTEGER DEFAULT 0,
+  created_by UUID REFERENCES public.profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Spreadsheets table
+CREATE TABLE public.spreadsheets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  data JSONB DEFAULT '[]'::jsonb, -- Array of rows with cells
+  columns JSONB DEFAULT '[]'::jsonb, -- Column definitions
+  linked_project_id UUID REFERENCES public.projects(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES public.profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Automations table (workflows)
+CREATE TABLE public.automations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  trigger_type TEXT NOT NULL, -- 'manual', 'schedule', 'webhook', 'task_update', 'project_update'
+  trigger_config JSONB DEFAULT '{}'::jsonb,
+  actions JSONB DEFAULT '[]'::jsonb, -- Array of action steps
+  is_active BOOLEAN DEFAULT true,
+  last_run_at TIMESTAMP WITH TIME ZONE,
+  execution_count INTEGER DEFAULT 0,
+  created_by UUID REFERENCES public.profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Automation logs table
+CREATE TABLE public.automation_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  automation_id UUID REFERENCES public.automations(id) ON DELETE CASCADE NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('success', 'failed', 'running')),
+  execution_time_ms INTEGER,
+  error_message TEXT,
+  executed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- AI interactions log (para simular y registrar)
+CREATE TABLE public.ai_interactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(id) NOT NULL,
+  interaction_type TEXT NOT NULL, -- 'task_suggestion', 'formula_assist', 'automation_builder', 'insight_generation'
+  input_data JSONB,
+  output_data JSONB,
+  is_simulated BOOLEAN DEFAULT true, -- Marca si es simulado o real
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_projects_workspace ON public.projects(workspace_id);
+CREATE INDEX idx_tasks_project ON public.tasks(project_id);
+CREATE INDEX idx_tasks_assigned ON public.tasks(assigned_to);
+CREATE INDEX idx_tasks_status ON public.tasks(status);
+CREATE INDEX idx_spreadsheets_workspace ON public.spreadsheets(workspace_id);
+CREATE INDEX idx_automations_workspace ON public.automations(workspace_id);
+CREATE INDEX idx_automation_logs_automation ON public.automation_logs(automation_id);
+
+-- Enable Row Level Security
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workspaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.spreadsheets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automation_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_interactions ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies (básicas para demo)
+-- Profiles: usuarios pueden ver y actualizar su propio perfil
+CREATE POLICY "Users can view own profile" ON public.profiles
+  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Workspaces: por ahora acceso completo para owner
+CREATE POLICY "Users can view own workspaces" ON public.workspaces
+  FOR SELECT USING (auth.uid() = owner_id);
+CREATE POLICY "Users can create workspaces" ON public.workspaces
+  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY "Users can update own workspaces" ON public.workspaces
+  FOR UPDATE USING (auth.uid() = owner_id);
+
+-- Projects: acceso basado en workspace ownership (simplificado)
+CREATE POLICY "Users can view workspace projects" ON public.projects
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.workspaces 
+      WHERE workspaces.id = projects.workspace_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+CREATE POLICY "Users can create projects" ON public.projects
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.workspaces 
+      WHERE workspaces.id = projects.workspace_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+CREATE POLICY "Users can update workspace projects" ON public.projects
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.workspaces 
+      WHERE workspaces.id = projects.workspace_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+CREATE POLICY "Users can delete workspace projects" ON public.projects
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM public.workspaces 
+      WHERE workspaces.id = projects.workspace_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+
+-- Tasks: similar a projects (simplificado para demo)
+CREATE POLICY "Users can view project tasks" ON public.tasks
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.projects 
+      JOIN public.workspaces ON workspaces.id = projects.workspace_id
+      WHERE projects.id = tasks.project_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+
+-- Spreadsheets: acceso basado en workspace
+CREATE POLICY "Users can manage workspace spreadsheets" ON public.spreadsheets
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.workspaces 
+      WHERE workspaces.id = spreadsheets.workspace_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+
+-- Automations: acceso basado en workspace
+CREATE POLICY "Users can manage workspace automations" ON public.automations
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.workspaces 
+      WHERE workspaces.id = automations.workspace_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+
+-- Automation logs: solo lectura
+CREATE POLICY "Users can view automation logs" ON public.automation_logs
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.automations
+      JOIN public.workspaces ON workspaces.id = automations.workspace_id
+      WHERE automations.id = automation_logs.automation_id 
+      AND workspaces.owner_id = auth.uid()
+    )
+  );
+
+-- AI interactions: usuarios pueden ver sus propias interacciones
+CREATE POLICY "Users can view own AI interactions" ON public.ai_interactions
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create AI interactions" ON public.ai_interactions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Enable realtime for key tables
+ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.projects;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.spreadsheets;
+🏗️ ESTRUCTURA DEL PROYECTO
+text
+bzwork-demo/
+├── .env.example
+├── .env.local (gitignored)
+├── .gitignore
+├── README.md
+├── netlify.toml
+├── next.config.js
+├── package.json
+├── tsconfig.json
+├── tailwind.config.ts
+├── postcss.config.js
+├── public/
+│   ├── logo.svg
+│   └── favicon.ico
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx (landing/login)
+│   │   ├── dashboard/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx (overview)
+│   │   │   ├── projects/
+│   │   │   │   ├── page.tsx (lista proyectos)
+│   │   │   │   ├── [id]/
+│   │   │   │   │   ├── page.tsx (detalle proyecto)
+│   │   │   │   │   └── tasks/
+│   │   │   │   │       └── [taskId]/page.tsx
+│   │   │   ├── spreadsheets/
+│   │   │   │   ├── page.tsx (lista spreadsheets)
+│   │   │   │   └── [id]/page.tsx (editor)
+│   │   │   └── automations/
+│   │   │       ├── page.tsx (lista automations)
+│   │   │       └── [id]/page.tsx (editor visual)
+│   │   └── api/
+│   │       ├── ai/
+│   │       │   ├── task-suggest/route.ts
+│   │       │   ├── formula-assist/route.ts
+│   │       │   └── automation-builder/route.ts
+│   │       └── automations/
+│   │           └── execute/[id]/route.ts
+│   ├── components/
+│   │   ├── ui/ (shadcn components)
+│   │   ├── layout/
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── CommandPalette.tsx
+│   │   ├── projects/
+│   │   │   ├── ProjectCard.tsx
+│   │   │   ├── ProjectBoard.tsx (Kanban)
+│   │   │   ├── TaskCard.tsx
+│   │   │   └── CreateProjectDialog.tsx
+│   │   ├── spreadsheets/
+│   │   │   ├── SpreadsheetGrid.tsx
+│   │   │   ├── FormulaBar.tsx
+│   │   │   ├── AIFormulaAssist.tsx
+│   │   │   └── CellEditor.tsx
+│   │   ├── automations/
+│   │   │   ├── AutomationBuilder.tsx
+│   │   │   ├── TriggerSelector.tsx
+│   │   │   ├── ActionNode.tsx
+│   │   │   └── FlowCanvas.tsx
+│   │   └── ai/
+│   │       ├── AIChatPanel.tsx
+│   │       ├── AIInsightsWidget.tsx
+│   │       └── SimulatedTypingEffect.tsx
+│   ├── lib/
+│   │   ├── supabase/
+│   │   │   ├── client.ts
+│   │   │   ├── server.ts
+│   │   │   └── database.types.ts (auto-generado)
+│   │   ├── ai/
+│   │   │   └── simulators.ts (funciones para simular IA)
+│   │   ├── utils/
+│   │   │   ├── cn.ts (classnames utility)
+│   │   │   └── date.ts
+│   │   └── hooks/
+│   │       ├── useProjects.ts
+│   │       ├── useTasks.ts
+│   │       ├── useSpreadsheets.ts
+│   │       └── useAutomations.ts
+│   └── types/
+│       └── index.ts (tipos compartidos)
+└── supabase/
+    └── config.toml
+🔧 CONFIGURACIÓN DE ARCHIVOS CLAVE
+package.json
+json
+{
+  "name": "bzwork-demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "update-types": "npx supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > src/lib/supabase/database.types.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-dropdown-menu": "^2.1.2",
+    "@radix-ui/react-select": "^2.1.2",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.454.0",
+    "next": "14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.4.1",
+    "recharts": "^2.13.3",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7",
+    "zustand": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.15",
+    "postcss": "^8",
+    "supabase": "^1.200.3",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
+netlify.toml
+text
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+.env.example
+bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Project Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=BzWork Demo
+
+# Feature Flags
+NEXT_PUBLIC_AI_SIMULATION_MODE=true
+NEXT_PUBLIC_ENABLE_REALTIME=true
+next.config.js
+js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'standalone',
+  images: {
+    domains: ['avatars.githubusercontent.com'],
+    unoptimized: true, // Para Netlify
+  },
+  experimental: {
+    serverActions: true,
+  },
+}
+
+module.exports = nextConfig
+💻 CÓDIGO CORE - SUPABASE CLIENT
+src/lib/supabase/client.ts
+typescript
+import { createBrowserClient } from '@supabase/ssr'
+import { Database } from './database.types'
+
+export function createClient() {
+  return createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+src/lib/supabase/server.ts
+typescript
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { Database } from './database.types'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // Server component, ignore
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // Server component, ignore
+          }
+        },
+      },
+    }
+  )
+}
+🤖 SIMULADORES DE IA - CLAVE PARA DEMO REALISTA
+src/lib/ai/simulators.ts
+typescript
+/**
+ * Simuladores de IA para demo
+ * Estas funciones generan respuestas realistas sin llamar APIs reales
+ */
+
+import { Database } from '@/lib/supabase/database.types'
+
+type Task = Database['public']['Tables']['tasks']['Row']
+type Project = Database['public']['Tables']['projects']['Row']
+
+// Delay simulado para dar sensación de procesamiento
+const simulateDelay = (ms: number = 1500) => 
+  new Promise(resolve => setTimeout(resolve, ms))
+
+// Generador de sugerencias de tareas basado en proyecto
+export async function simulateTaskSuggestions(project: Project): Promise<string[]> {
+  await simulateDelay(2000)
+  
+  const suggestions = {
+    development: [
+      'Set up development environment and dependencies',
+      'Create database schema and migrations',
+      'Implement authentication system',
+      'Build API endpoints for core features',
+      'Write unit tests for critical components',
+      'Set up CI/CD pipeline',
+      'Create documentation for API',
+    ],
+    marketing: [
+      'Research target audience and competitors',
+      'Develop brand messaging and positioning',
+      'Create content calendar for Q1',
+      'Design social media campaign',
+      'Set up analytics and tracking',
+      'Launch email marketing campaign',
+      'Prepare case studies and testimonials',
+    ],
+    design: [
+      'Conduct user research and interviews',
+      'Create user personas and journey maps',
+      'Design wireframes for key screens',
+      'Develop high-fidelity mockups',
+      'Create design system and component library',
+      'Run usability testing sessions',
+      'Prepare design handoff documentation',
+    ],
+  }
+
+  // Seleccionar sugerencias basadas en nombre/descripción del proyecto
+  const projectText = `${project.name} ${project.description}`.toLowerCase()
+  
+  if (projectText.includes('dev') || projectText.includes('tech') || projectText.includes('software')) {
+    return suggestions.development.slice(0, 5)
+  } else if (projectText.includes('market') || projectText.includes('campaign') || projectText.includes('content')) {
+    return suggestions.marketing.slice(0, 5)
+  } else if (projectText.includes('design') || projectText.includes('ui') || projectText.includes('ux')) {
+    return suggestions.design.slice(0, 5)
+  }
+  
+  // Default: mix de todas
+  return [
+    suggestions.development[0],
+    suggestions.marketing[0],
+    suggestions.design[0],
+    suggestions.development[1],
+    suggestions.marketing[1],
+  ]
+}
+
+// Asistente de fórmulas para spreadsheets
+export async function simulateFormulaAssist(naturalLanguageQuery: string): Promise<{
+  formula: string
+  explanation: string
+  example: string
+}> {
+  await simulateDelay(1800)
+  
+  const query = naturalLanguageQuery.toLowerCase()
+  
+  // Detección de intención
+  if (query.includes('sum') || query.includes('total') || query.includes('suma')) {
+    return {
+      formula: '=SUM(B2:B10)',
+      explanation: 'Esta fórmula suma todos los valores en el rango B2 a B10. Útil para calcular totales de columnas numéricas.',
+      example: 'Si B2:B10 contiene [10, 20, 30, 40, 50, 60, 70, 80, 90], el resultado será 450',
+    }
+  }
+  
+  if (query.includes('average') || query.includes('promedio') || query.includes('mean')) {
+    return {
+      formula: '=AVERAGE(C2:C50)',
+      explanation: 'Calcula el promedio aritmético de todos los valores en el rango especificado.',
+      example: 'Si C2:C50 contiene valores de ventas mensuales, obtendrás la venta promedio mensual',
+    }
+  }
+  
+  if (query.includes('count') || query.includes('contar') || query.includes('cuantos')) {
+    return {
+      formula: '=COUNTIF(D2:D100, "Completed")',
+      explanation: 'Cuenta cuántas celdas en el rango D2:D100 contienen exactamente el texto "Completed".',
+      example: 'Útil para contar tareas completadas, proyectos finalizados, etc.',
+    }
+  }
+  
+  if (query.includes('if') || query.includes('condition') || query.includes('si')) {
+    return {
+      formula: '=IF(E2>1000, "High Value", "Standard")',
+      explanation: 'Evalúa una condición: si el valor en E2 es mayor a 1000, devuelve "High Value", sino "Standard".',
+      example: 'Perfecto para categorizar automáticamente datos basados en umbrales',
+    }
+  }
+  
+  if (query.includes('vlookup') || query.includes('buscar') || query.includes('lookup')) {
+    return {
+      formula: '=VLOOKUP(A2, DataSheet!A:C, 3, FALSE)',
+      explanation: 'Busca el valor de A2 en la primera columna de DataSheet y retorna el valor de la tercera columna.',
+      example: 'Ideal para traer información de otras hojas, como precios de productos o datos de clientes',
+    }
+  }
+  
+  // Default: respuesta genérica inteligente
+  return {
+    formula: '=SUM(A2:A10) / COUNT(A2:A10)',
+    explanation: 'Esta es una fórmula de ejemplo que calcula el promedio manualmente (suma dividida por cantidad de elementos).',
+    example: 'Basado en tu consulta, esta fórmula podría ser un punto de partida. Prueba describirla con más detalles.',
+  }
+}
+
+// Constructor de automatizaciones en lenguaje natural
+export async function simulateAutomationBuilder(description: string): Promise<{
+  name: string
+  trigger: {
+    type: string
+    config: Record<string, any>
+  }
+  actions: Array<{
+    type: string
+    config: Record<string, any>
+    description: string
+  }>
+  estimatedExecutionTime: string
+}> {
+  await simulateDelay(2500)
+  
+  const desc = description.toLowerCase()
+  
+  // Detectar trigger
+  let trigger = { type: 'manual', config: {} }
+  if (desc.includes('when task') || desc.includes('cuando tarea')) {
+    trigger = {
+      type: 'task_update',
+      config: { field: 'status', value: 'done' }
+    }
+  } else if (desc.includes('every day') || desc.includes('cada día') || desc.includes('daily')) {
+    trigger = {
+      type: 'schedule',
+      config: { cron: '0 9 * * *', timezone: 'America/New_York' }
+    }
+  } else if (desc.includes('new project') || desc.includes('nuevo proyecto')) {
+    trigger = {
+      type: 'project_create',
+      config: {}
+    }
+  }
+  
+  // Detectar acciones
+  const actions = []
+  
+  if (desc.includes('email') || desc.includes('correo') || desc.includes('notify')) {
+    actions.push({
+      type: 'send_email',
+      config: {
+        to: '{{assigned_user.email}}',
+        subject: 'Task Update Notification',
+        body: 'Your task "{{task.title}}" has been updated to {{task.status}}',
+      },
+      description: 'Send email notification to assigned user',
+    })
+  }
+  
+  if (desc.includes('slack') || desc.includes('message')) {
+    actions.push({
+      type: 'send_slack',
+      config: {
+        channel: '#general',
+        message: '🎯 Task completed: {{task.title}} by {{user.name}}',
+      },
+      description: 'Post message to Slack channel',
+    })
+  }
+  
+  if (desc.includes('update') || desc.includes('actualizar') || desc.includes('change')) {
+    actions.push({
+      type: 'update_task',
+      config: {
+        field: 'tags',
+        value: ['completed', 'automated'],
+      },
+      description: 'Add completion tags to task',
+    })
+  }
+  
+  if (desc.includes('create') || desc.includes('crear')) {
+    actions.push({
+      type: 'create_task',
+      config: {
+        title: 'Follow-up: Review {{task.title}}',
+        project_id: '{{task.project_id}}',
+        assigned_to: '{{task.created_by}}',
+        due_date: '{{now + 7 days}}',
+      },
+      description: 'Create follow-up task automatically',
+    })
+  }
+  
+  if (desc.includes('spreadsheet') || desc.includes('hoja') || desc.includes('log')) {
+    actions.push({
+      type: 'append_spreadsheet',
+      config: {
+        spreadsheet_id: 'auto-detect',
+        row: ['{{task.title}}', '{{task.status}}', '{{now}}', '{{user.name}}'],
+      },
+      description: 'Log completed task to spreadsheet',
+    })
+  }
+  
+  // Si no detectamos acciones, agregar defaults
+  if (actions.length === 0) {
+    actions.push({
+      type: 'send_notification',
+      config: {
+        user_id: '{{trigger.user_id}}',
+        message: 'Automation triggered: {{automation.name}}',
+      },
+      description: 'Send in-app notification',
+    })
+  }
+  
+  return {
+    name: `Auto-generated: ${description.slice(0, 50)}`,
+    trigger,
+    actions,
+    estimatedExecutionTime: `${actions.length * 500}ms`,
+  }
+}
+
+// Generador de insights desde datos de proyecto
+export async function simulateProjectInsights(
+  project: Project,
+  tasks: Task[]
+): Promise<{
+  summary: string
+  metrics: {
+    label: string
+    value: string | number
+    trend?: 'up' | 'down' | 'neutral'
+    insight?: string
+  }[]
+  recommendations: string[]
+  risks: { level: 'low' | 'medium' | 'high'; message: string }[]
+}> {
+  await simulateDelay(2200)
+  
+  // Calcular métricas reales
+  const totalTasks = tasks.length
+  const completedTasks = tasks.filter(t => t.status === 'done').length
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length
+  const overdueTasks = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+  
+  const highPriorityTasks = tasks.filter(t => t.priority === 'high' || t.priority === 'urgent').length
+  const unassignedTasks = tasks.filter(t => !t.assigned_to).length
+  
+  // Calcular horas estimadas vs actuales
+  const estimatedHours = tasks.reduce((sum, t) => sum + (Number(t.estimated_hours) || 0), 0)
+  const actualHours = tasks.reduce((sum, t) => sum + (Number(t.actual_hours) || 0), 0)
+  const hoursVariance = estimatedHours > 0 
+    ? Math.round(((actualHours - estimatedHours) / estimatedHours) * 100) 
+    : 0
+  
+  // Generar recomendaciones inteligentes
+  const recommendations = []
+  if (unassignedTasks > totalTasks * 0.2) {
+    recommendations.push(`Asignar ${unassignedTasks} tareas sin responsable para mejorar accountability`)
+  }
+  if (overdueTasks > 0) {
+    recommendations.push(`Reprogramar o priorizar ${overdueTasks} tareas vencidas para recuperar el timeline`)
+  }
+  if (completionRate < 50 && totalTasks > 10) {
+    recommendations.push('Considerar dividir tareas grandes en subtareas más manejables')
+  }
+  if (hoursVariance > 20) {
+    recommendations.push('Las estimaciones están desviadas +20%. Revisar proceso de estimación con el equipo')
+  }
+  if (highPriorityTasks > totalTasks * 0.5) {
+    recommendations.push('Demasiadas tareas de alta prioridad. Re-evaluar prioridades para enfocar esfuerzos')
+  }
+  if (recommendations.length === 0) {
+    recommendations.push('El proyecto está en buen camino. Mantener el momentum actual')
+  }
+  
+  // Detectar riesgos
+  const risks = []
+  if (overdueTasks > totalTasks * 0.3) {
+    risks.push({ level: 'high' as const, message: `${overdueTasks} tareas vencidas representan riesgo significativo al timeline` })
+  } else if (overdueTasks > 0) {
+    risks.push({ level: 'medium' as const, message: `${overdueTasks} tareas vencidas requieren atención` })
+  }
+  
+  if (completionRate < 30 && project.end_date && new Date(project.end_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) {
+    risks.push({ level: 'high' as const, message: 'Fecha de entrega en <30 días con solo ' + completionRate + '% completado' })
+  }
+  
+  if (unassignedTasks > totalTasks * 0.3) {
+    risks.push({ level: 'medium' as const, message: `${unassignedTasks} tareas sin asignar pueden generar cuellos de botella` })
+  }
+  
+  if (risks.length === 0) {
+    risks.push({ level: 'low' as const, message: 'No se detectaron riesgos significativos en este momento' })
+  }
+  
+  return {
+    summary: `Proyecto "${project.name}" está ${completionRate}% completo con ${inProgressTasks} tareas activas. ${overdueTasks > 0 ? `Atención: ${overdueTasks} tareas vencidas.` : 'Timeline en curso.'}`,
+    metrics: [
+      { label: 'Completion Rate', value: `${completionRate}%`, trend: completionRate > 50 ? 'up' : 'down' },
+      { label: 'Tasks Completed', value: `${completedTasks}/${totalTasks}` },
+      { label: 'In Progress', value: inProgressTasks },
+      { label: 'Overdue', value: overdueTasks, trend: overdueTasks > 0 ? 'down' : 'neutral' },
+      { label: 'Estimated Hours', value: Math.round(estimatedHours) },
+      { label: 'Actual Hours', value: Math.round(actualHours), insight: hoursVariance !== 0 ? `${hoursVariance > 0 ? '+' : ''}${hoursVariance}% vs estimate` : undefined },
+      { label: 'High Priority', value: highPriorityTasks },
+      { label: 'Unassigned', value: unassignedTasks, trend: unassignedTasks > 0 ? 'down' : 'neutral' },
+    ],
+    recommendations,
+    risks,
+  }
+}
+
+// Simulador de respuesta conversacional de IA
+export async function simulateAIChatResponse(
+  userMessage: string,
+  context: { workspaceId: string; userId: string }
+): Promise<{ message: string; suggestedActions?: Array<{ label: string; action: string }> }> {
+  await simulateDelay(1500)
+  
+  const msg = userMessage.toLowerCase()
+  
+  // Análisis de intención
+  if (msg.includes('create') || msg.includes('new') || msg.includes('add')) {
+    if (msg.includes('project')) {
+      return {
+        message: "I can help you create a new project! I'll need a few details:\n\n1. Project name\n2. Description (optional)\n3. Start and end dates\n4. Initial budget (if applicable)\n\nWould you like to start with a template or create from scratch?",
+        suggestedActions: [
+          { label: 'Create from template', action: 'show_templates' },
+          { label: 'Create blank project', action: 'open_create_dialog' },
+        ],
+      }
+    }
+    if (msg.includes('task')) {
+      return {
+        message: "I'll help you create a new task. Which project should it belong to? You can tell me the project name or I can show you a list of your active projects.",
+        suggestedActions: [
+          { label: 'Show active projects', action: 'list_projects' },
+          { label: 'Quick add to last project', action: 'quick_add_task' },
+        ],
+      }
+    }
+  }
+  
+  if (msg.includes('status') || msg.includes('how') || msg.includes('progress')) {
+    return {
+      message: "Based on your current workspace data:\n\n• You have 3 active projects\n• 24 tasks in progress\n• 67% average completion rate\n• 2 tasks are overdue and need attention\n\nWould you like a detailed breakdown of any specific project?",
+      suggestedActions: [
+        { label: 'Show overdue tasks', action: 'filter_overdue' },
+        { label: 'Project breakdown', action: 'show_insights' },
+      ],
+    }
+  }
+  
+  if (msg.includes('help') || msg.includes('what can you')) {
+    return {
+      message: "I'm your AI assistant for BzWork! I can help you:\n\n🎯 **Project Management**\n• Create and organize projects & tasks\n• Generate task suggestions\n• Analyze project health and risks\n\n📊 **Data Analysis**\n• Build formulas in natural language\n• Create charts and insights\n• Connect project data to spreadsheets\n\n⚡ **Automation**\n• Build workflows without code\n• Set up smart notifications\n• Automate repetitive tasks\n\nJust tell me what you need in plain English!",
+      suggestedActions: [
+        { label: 'Analyze my projects', action: 'run_analysis' },
+        { label: 'Build an automation', action: 'open_automation_builder' },
+      ],
+    }
+  }
+  
+  // Respuesta default inteligente
+  return {
+    message: "I understand you're looking for assistance. Could you provide a bit more detail about what you'd like to accomplish?\n\nI can help with:\n• Creating or managing projects and tasks\n• Analyzing data and generating insights\n• Building automations\n• Writing spreadsheet formulas\n\nWhat would you like to focus on?",
+    suggestedActions: [
+      { label: 'Manage projects', action: 'navigate_projects' },
+      { label: 'Analyze data', action: 'navigate_spreadsheets' },
+      { label: 'Build automation', action: 'navigate_automations' },
+    ],
+  }
+}
+🎨 COMPONENTE EJEMPLO: KANBAN BOARD CON DRAG & DROP
+src/components/projects/ProjectBoard.tsx
+typescript
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Database } from '@/lib/supabase/database.types'
+import { TaskCard } from './TaskCard'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
+
+type Task = Database['public']['Tables']['tasks']['Row']
+
+const COLUMNS = [
+  { id: 'todo', title: 'To Do', color: 'bg-gray-100' },
+  { id: 'in_progress', title: 'In Progress', color: 'bg-blue-100' },
+  { id: 'review', title: 'Review', color: 'bg-yellow-100' },
+  { id: 'done', title: 'Done', color: 'bg-green-100' },
+]
+
+interface ProjectBoardProps {
+  projectId: string
+}
+
+export function ProjectBoard({ projectId }: ProjectBoardProps) {
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    fetchTasks()
+    
+    // Suscribirse a cambios en tiempo real
+    const channel = supabase
+      .channel(`project-${projectId}-tasks`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTasks(prev => [...prev, payload.new as Task])
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks(prev => prev.map(t => t.id === payload.new.id ? payload.new as Task : t))
+          } else if (payload.eventType === 'DELETE') {
+            setTasks(prev => prev.filter(t => t.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [projectId])
+
+  async function fetchTasks() {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('position')
+
+    if (!error && data) {
+      setTasks(data)
+    }
+    setLoading(false)
+  }
+
+  async function updateTaskStatus(taskId: string, newStatus: string) {
+    const { error } = await supabase
+      .from('tasks')
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', taskId)
+
+    if (error) {
+      console.error('Error updating task:', error)
+    }
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">Loading tasks...</div>
+  }
+
+  return (
+    <div className="flex gap-4 overflow-x-auto p-4">
+      {COLUMNS.map(column => {
+        const columnTasks = tasks.filter(t => t.status === column.id)
+        
+        return (
+          <div key={column.id} className="flex-shrink-0 w-80">
+            <div className={`rounded-lg p-3 ${column.color}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">{column.title}</h3>
+                <span className="text-xs text-gray-600">{columnTasks.length}</span>
+              </div>
+              
+              <div className="space-y-2">
+                {columnTasks.map(task => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onStatusChange={updateTaskStatus}
+                  />
+                ))}
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full mt-2"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Task
+              </Button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+🚀 API ROUTE EJEMPLO: AI TASK SUGGESTIONS
+src/app/api/ai/task-suggest/route.ts
+typescript
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { simulateTaskSuggestions } from '@/lib/ai/simulators'
+
+export async function POST(request: NextRequest) {
+  try {
+    const { projectId } = await request.json()
+    
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createClient()
+    
+    // Verificar autenticación
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener información del proyecto
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single()
+
+    if (projectError || !project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      )
+    }
+
+    // Simular sugerencias de IA
+    const suggestions = await simulateTaskSuggestions(project)
+
+    // Registrar interacción
+    await supabase.from('ai_interactions').insert({
+      user_id: user.id,
+      interaction_type: 'task_suggestion',
+      input_data: { project_id: projectId, project_name: project.name },
+      output_data: { suggestions },
+      is_simulated: true,
+    })
+
+    return NextResponse.json({
+      success: true,
+      suggestions,
+      metadata: {
+        project_name: project.name,
+        generated_at: new Date().toISOString(),
+        simulation_mode: true,
+      },
+    })
+  } catch (error) {
+    console.error('Error in task-suggest API:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+📋 README.md COMPLETO
+text
+# BzWork Demo MVP
+
+> All-in-one productivity platform integrating project management, data analysis, and workflow automation with AI.
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- Supabase account
+- Netlify account (for deployment)
+- GitHub account
+
+### Local Development Setup
+
+1. **Clone repository**
+git clone https://github.com/yourusername/bzwork-demo.git
+cd bzwork-demo
+
+text
+
+2. **Install dependencies**
+npm install
+
+text
+
+3. **Set up Supabase**
+- Create new project at https://supabase.com
+- Run the SQL schema from `/docs/schema.sql` in SQL Editor
+- Enable Realtime for tables: tasks, projects, spreadsheets
+- Copy Project URL and anon key
+
+4. **Configure environment variables**
+cp .env.example .env.local
+
+text
+
+Fill in your Supabase credentials:
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+text
+
+5. **Generate TypeScript types from Supabase**
+npm run update-types
+
+text
+
+6. **Start development server**
+npm run dev
+
+text
+
+7. Open http://localhost:3000
+
+### Deploy to Netlify
+
+1. **Push to GitHub**
+git add .
+git commit -m "Initial commit"
+git push origin main
+
+text
+
+2. **Connect to Netlify**
+- Go to https://app.netlify.com/start
+- Select your GitHub repository
+- Build settings are auto-detected from `netlify.toml`
+
+3. **Add environment variables in Netlify**
+- Go to Site settings > Environment variables
+- Add all variables from `.env.local`
+
+4. **Deploy!**
+- Push to `main` branch triggers automatic deployment
+- Site URL: `https://your-site-name.netlify.app`
+
+## 🏗️ Architecture
+
+- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- **Database**: Supabase (PostgreSQL + Realtime + Auth)
+- **Hosting**: Netlify (serverless + CDN)
+- **AI**: Simulated responses (ready for OpenAI integration)
+
+## 📦 Key Features
+
+### ✅ Implemented (Real)
+
+- **Authentication**: Supabase Auth with email/password
+- **Project Management**: Create, update, delete projects
+- **Task Board**: Kanban-style board with drag-and-drop
+- **Real-time Updates**: Live sync across all clients
+- **Spreadsheets**: Basic grid with formulas
+- **Automations**: Create and manage workflows
+- **Database**: Full CRUD operations with RLS
+
+### 🤖 Simulated (AI Features)
+
+- Task suggestions based on project context
+- Formula assistance in natural language
+- Automation builder from descriptions
+- Project insights and risk analysis
+- Conversational AI assistant
+
+## 🔐 Security
+
+- Row Level Security (RLS) enabled on all tables
+- Environment variables for sensitive data
+- Secure authentication with Supabase Auth
+- No API keys exposed in client-side code
+
+## 🧪 Testing
+
+npm run type-check # TypeScript validation
+npm run lint # ESLint checks
+npm run build # Production build test
+
+text
+
+## 📝 License
+
+MIT
+
+## 🤝 Contributing
+
+This is a demo project. For production use, implement:
+- Real AI integration (OpenAI API)
+- Comprehensive error handling
+- E2E tests
+- Performance optimizations
+- Advanced RLS policies
+✅ CHECKLIST DE IMPLEMENTACIÓN
+Fase 1: Setup Inicial
+ Crear repositorio en GitHub
+
+ Instalar dependencias con npm install
+
+ Configurar Supabase project
+
+ Ejecutar schema SQL en Supabase
+
+ Generar tipos TypeScript con npm run update-types
+
+ Verificar .env.local con credenciales correctas
+
+Fase 2: Componentes Core
+ Layout principal con Sidebar y Header
+
+ Página de login/signup (Supabase Auth)
+
+ Dashboard overview con stats
+
+ Lista de proyectos con cards
+
+ Kanban board con drag & drop
+
+ Editor de spreadsheets básico
+
+Fase 3: Funcionalidades Real-time
+ Sincronización en tiempo real de tasks
+
+ Actualización automática de project stats
+
+ Notificaciones in-app cuando cambian datos
+
+Fase 4: Simuladores de IA
+ Implementar simulateTaskSuggestions
+
+ Implementar simulateFormulaAssist
+
+ Implementar simulateAutomationBuilder
+
+ Implementar simulateProjectInsights
+
+ Implementar simulateAIChatResponse
+
+ Agregar efectos de typing para respuestas IA
+
+Fase 5: API Routes
+ /api/ai/task-suggest - Sugerencias de tareas
+
+ /api/ai/formula-assist - Asistente de fórmulas
+
+ /api/ai/automation-builder - Constructor de automatizaciones
+
+ /api/ai/chat - Chatbot conversacional
+
+ /api/automations/execute/[id] - Ejecutor de automatizaciones
+
+Fase 6: Polish y UX
+ Loading states en todas las operaciones
+
+ Error boundaries y manejo de errores
+
+ Toast notifications (react-hot-toast)
+
+ Animaciones suaves (framer-motion opcional)
+
+ Responsive design mobile/tablet/desktop
+
+Fase 7: Deployment
+ Crear netlify.toml con configuración
+
+ Push a GitHub main branch
+
+ Conectar repositorio a Netlify
+
+ Configurar environment variables en Netlify
+
+ Verificar build exitoso
+
+ Probar site en producción
+
+🎯 RESULTADO ESPERADO
+Después de seguir este prompt, tendrás:
+
+✅ Demo completamente funcional deployada en Netlify
+✅ Repositorio GitHub con código organizado y documentado
+✅ Base de datos Supabase con schema completo y RLS
+✅ Funcionalidades 100% reales: proyectos, tareas, spreadsheets, automations
+✅ IA simulada de manera convincente con delays y respuestas contextuales
+✅ Real-time sync funcionando entre múltiples clients
+✅ TypeScript strict con types auto-generados
+✅ UI profesional con Tailwind y shadcn/ui
+✅ Listo para presentar a potenciales clientes
+✅ No uses comentarios en ninguna parte del codigo

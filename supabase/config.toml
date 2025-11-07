@@ -1,0 +1,10 @@
+[project]
+api_url = "https://your-project-ref.supabase.co"
+service_role_key = "env(SUPABASE_SERVICE_ROLE_KEY)"
+anon_key = "env(NEXT_PUBLIC_SUPABASE_ANON_KEY)"
+
+[functions]
+port = 54321
+
+[database]
+schemas = ["public"]
